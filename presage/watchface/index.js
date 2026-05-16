@@ -64,7 +64,7 @@ try {
         return this._angle;
       }
       set angle(value) {
-        if (this._widget) {
+        if (this._widget && value !== this._angle) {
           this._angle = value;
           this._widget.setProperty(hmUI.prop.ANGLE, this._angle);
         }
@@ -74,7 +74,7 @@ try {
         return this._visible;
       }
       set visible(value) {
-        if (this._widget) {
+        if (this._widget && value !== this._visible) {
           this._visible = value;
           this._widget.setProperty(hmUI.prop.VISIBLE, this._visible);
         }
@@ -114,7 +114,6 @@ try {
     let worldData = undefined;
     let displayCurrent = true;
 
-    let normal_timerUpdate = undefined;
     let normal_timerUpdateSecSmooth = undefined;
     let timer_animate_wt = undefined;
 
@@ -251,7 +250,9 @@ try {
         let lastDay = 0;
         if (!timeSensor) timeSensor = hmSensor.createSensor(hmSensor.id.TIME);
         timeSensor.addEventListener(timeSensor.event.MINUTEEND, function () {
-          time_update(true, true);
+          time_update(true, true, 0); // force second=0 to land exactly on minute mark
+          worldData = getWorldData(index);
+          update_world_clock(false);
           if (lastDay != timeSensor.day) {
             // update on date change only
             lastDay = timeSensor.day;
@@ -429,10 +430,10 @@ try {
         if (hmFS.SysProGetInt("PRESAGE_GMT_currentMode")) currentMode = hmFS.SysProGetInt("PRESAGE_GMT_currentMode");
         bottomSubDialUpdate(false);
 
-        function time_update(updateHour = false, updateMinute = false) {
+        function time_update(updateHour = false, updateMinute = false, secondOverride = -1) {
           let hour = timeSensor.hour;
           let minute = timeSensor.minute;
-          let second = timeSensor.second;
+          let second = secondOverride >= 0 ? secondOverride : timeSensor.second;
 
           if (updateHour) {
             let normal_hour = hour;
@@ -445,23 +446,25 @@ try {
           }
 
           if (updateMinute) {
-            let normal_fullAngle_minute = 360;
-            let normal_angle_minute = (normal_fullAngle_minute / 60 / 60) * (minute * 60 + second);
-
+            let normal_angle_minute = (360 / 3600) * (minute * 60 + second);
             normal_analog_clock_pro_minute_pointer_img.angle = normal_angle_minute;
             idle_analog_clock_time_pointer_minute.angle = normal_angle_minute;
-
-            // gmt
-            worldData = getWorldData(index);
-            update_world_clock(false);
           }
         }
 
+        let last_beat = -1;
         function time_update_sec_smth() {
+          const beat = Math.floor((timeSensor.utc % 1000) / (1000 / 6)); // 0–5 for 21600 bph
+          if (beat === last_beat) return;
+          last_beat = beat;
           const second = timeSensor.second;
-          const second_angle = 0 + (360 * (second + (timeSensor.utc % 1000) / 1000)) / 60;
-
-          normal_analog_clock_pro_second_pointer_img.angle = second_angle;
+          normal_analog_clock_pro_second_pointer_img.angle = (second + beat / 6) / 60 * 360;
+          if (beat === 0 && second % 6 === 0) {
+            const minute = timeSensor.minute;
+            const minute_angle = (360 * (minute * 60 + second)) / 3600;
+            normal_analog_clock_pro_minute_pointer_img.angle = minute_angle;
+            idle_analog_clock_time_pointer_minute.angle = minute_angle;
+          }
         }
 
         function gmtButtonClick(displayCurrent) {
@@ -502,7 +505,7 @@ try {
 
             if (animate) {
               if (!timer_animate_wt) {
-                timer_animate_wt = timer.createTimer(0, 30, function (option) {
+                timer_animate_wt = timer.createTimer(0, 60, function (option) {
                   animate_wt();
                 });
               }
@@ -541,10 +544,10 @@ try {
         }
 
         function animate_wt() {
-          let da = wt_current_angle > wt_target_angle ? -3 : 3;
+          let da = wt_current_angle > wt_target_angle ? -6 : 6;
           wt_current_angle += da;
           if (wt_current_angle >= 360) wt_current_angle = wt_current_angle - 360;
-          if (valuesAreClose(wt_current_angle, wt_target_angle, 4)) wt_current_angle = wt_target_angle;
+          if (valuesAreClose(wt_current_angle, wt_target_angle, 7)) wt_current_angle = wt_target_angle;
 
           set_wt(wt_current_angle);
 
@@ -597,22 +600,14 @@ try {
           resume_call: function () {
             displayCurrent = true;
             worldData = getWorldData(index);
+            update_world_clock(false);
             time_update(true, true);
             dayOfWeek_update();
             date_update();
 
             if (screenType == hmSetting.screen_type.WATCHFACE) {
-              if (!normal_timerUpdate) {
-                let animDelay = timeSensor.utc % 1000;
-                let animRepeat = (1000 * 60) / 6;
-                normal_timerUpdate = timer.createTimer(animDelay, animRepeat, function (option) {
-                  time_update(false, true);
-                }); // end timer
-              } // end timer check
-            } // end screenType
-
-            if (screenType == hmSetting.screen_type.WATCHFACE) {
               if (!normal_timerUpdateSecSmooth) {
+                last_beat = -1;
                 let animDelay = 0;
                 let animRepeat = 1000 / 6;
                 normal_timerUpdateSecSmooth = timer.createTimer(animDelay, animRepeat, function (option) {
@@ -624,10 +619,6 @@ try {
           pause_call: function () {
             displayCurrent = true;
 
-            if (normal_timerUpdate) {
-              timer.stopTimer(normal_timerUpdate);
-              normal_timerUpdate = undefined;
-            }
             if (normal_timerUpdateSecSmooth) {
               timer.stopTimer(normal_timerUpdateSecSmooth);
               normal_timerUpdateSecSmooth = undefined;
