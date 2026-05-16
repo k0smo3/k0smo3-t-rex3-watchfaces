@@ -305,16 +305,13 @@
             let screenType = hmSetting.getScreenType();
             //#region time_update
             function time_update(updateHour = false, updateMinute = false) {
-              console.log('time_update()');
               let hour = timeSensor.hour;
               let minute = timeSensor.minute;
-              let second = timeSensor.second;
-              let format_hour = timeSensor.format_hour;
 
-              console.log('day font');
               if (updateHour) {
-                let normal_dayStr = timeSensor.day.toString();
-                normal_day_text_font.setProperty(hmUI.prop.TEXT, normal_dayStr );
+                let dayStr = timeSensor.day.toString();
+                normal_day_text_font.setProperty(hmUI.prop.TEXT, dayStr);
+                idle_day_text_font.setProperty(hmUI.prop.TEXT, dayStr);
               };
 
               if (updateMinute) {
@@ -323,20 +320,16 @@
                 update_world_clock(false);
                 if (idle_analog_clock_pro_hour_pointer_img) idle_analog_clock_pro_hour_pointer_img.setProperty(hmUI.prop.ANGLE, local_angle);
               };
-
-              console.log('day font');
-              if (updateHour) {
-                let idle_dayStr = timeSensor.day.toString();
-                idle_day_text_font.setProperty(hmUI.prop.TEXT, idle_dayStr );
-              };
-
             };
 
             //#endregion
 
             // 36,000 bph high-beat: 10 steps/sec, 100ms timer
+            let last_beat = -1;
             function update_second() {
               const beat = Math.floor((timeSensor.utc % 1000) / 100);
+              if (beat === last_beat) return;
+              last_beat = beat;
               const angle = (timeSensor.second + beat / 10) / 60 * 360;
               if (normal_analog_clock_time_pointer_second)
                 normal_analog_clock_time_pointer_second.setProperty(hmUI.prop.ANGLE, angle);
@@ -376,7 +369,7 @@
               wt_target_angle = (worldData.hour * 60 + worldData.minute) * wt_angle_delta;
               if (animate) {
                 if (!timer_animate_wt) {
-                  timer_animate_wt = timer.createTimer(0, 30, function() { animate_wt(); });
+                  timer_animate_wt = timer.createTimer(0, 60, function() { animate_wt(); });
                 }
               } else {
                 wt_current_angle = wt_target_angle;
@@ -385,10 +378,10 @@
             }
 
             function animate_wt() {
-              let da = wt_current_angle > wt_target_angle ? -3.7 : 3.7;
+              let da = wt_current_angle > wt_target_angle ? -7.4 : 7.4;
               wt_current_angle += da;
               if (wt_current_angle >= 360) wt_current_angle -= 360;
-              if (Math.abs(wt_current_angle - wt_target_angle) <= 4) wt_current_angle = wt_target_angle;
+              if (Math.abs(wt_current_angle - wt_target_angle) <= 8) wt_current_angle = wt_target_angle;
               set_wt(wt_current_angle);
               if (timer_animate_wt && wt_current_angle === wt_target_angle) {
                 timer.stopTimer(timer_animate_wt);
@@ -405,8 +398,10 @@
                 console.log('resume_call()');
                 displayCurrent = true;
                 time_update(true, true);
-                if (!timer_second)
+                if (!timer_second) {
+                  last_beat = -1;
                   timer_second = timer.createTimer(0, 100, update_second);
+              }
               }),
               pause_call: (function () {
                 displayCurrent = true;
