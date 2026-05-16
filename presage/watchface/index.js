@@ -96,14 +96,10 @@ try {
     let normal_week_pointer_progress_date_pointer = "";
     let normal_week__icon_img = "";
     let normal_day_pointer_progress_date_pointer = "";
-    let normal_analog_clock_pro_hour_pointer_img = "";
-    let normal_analog_clock_pro_minute_pointer_img = "";
     let normal_analog_clock_pro_second_pointer_img = "";
     let normal_world_clock_pointer_img = "";
     let normal_analog_clock_pro_second_cover_pointer_img = "";
     let idle_background_bg_img = "";
-    let idle_analog_clock_time_pointer_hour = "";
-    let idle_analog_clock_time_pointer_minute = "";
     let idle_world_clock_pointer_img = "";
     let timeSensor = "";
 
@@ -250,7 +246,6 @@ try {
         let lastDay = 0;
         if (!timeSensor) timeSensor = hmSensor.createSensor(hmSensor.id.TIME);
         timeSensor.addEventListener(timeSensor.event.MINUTEEND, function () {
-          time_update(true, true, 0); // force second=0 to land exactly on minute mark
           worldData = getWorldData(index);
           update_world_clock(false);
           if (lastDay != timeSensor.day) {
@@ -275,31 +270,17 @@ try {
           show_level: hmUI.show_level.ONLY_NORMAL,
         });
 
-        normal_analog_clock_pro_hour_pointer_img = new ImgWidget({
-          x: 0,
-          y: 0,
-          w: deviceInfo.width,
-          h: deviceInfo.height,
-          pos_x: 240 - 26,
-          pos_y: 240 - 240,
-          center_x: 240,
-          center_y: 240,
-          src: "normal_hours.png",
-          angle: 0,
-          show_level: hmUI.show_level.ONLY_NORMAL,
-        });
-
-        normal_analog_clock_pro_minute_pointer_img = new ImgWidget({
-          x: 0,
-          y: 0,
-          w: deviceInfo.width,
-          h: deviceInfo.height,
-          pos_x: 240 - 25,
-          pos_y: 240 - 240,
-          center_x: 240,
-          center_y: 240,
-          src: "normal_minutes.png",
-          angle: 0,
+        hmUI.createWidget(hmUI.widget.TIME_POINTER, {
+          hour_path: "normal_hours.png",
+          hour_centerX: 240,
+          hour_centerY: 240,
+          hour_posX: 26,
+          hour_posY: 240,
+          minute_path: "normal_minutes.png",
+          minute_centerX: 240,
+          minute_centerY: 240,
+          minute_posX: 25,
+          minute_posY: 240,
           show_level: hmUI.show_level.ONLY_NORMAL,
         });
 
@@ -347,31 +328,17 @@ try {
           show_level: hmUI.show_level.ONLY_AOD,
         });
 
-        idle_analog_clock_time_pointer_hour = new ImgWidget({
-          x: 0,
-          y: 0,
-          w: deviceInfo.width,
-          h: deviceInfo.height,
-          pos_x: 240 - 26,
-          pos_y: 240 - 240,
-          center_x: 240,
-          center_y: 240,
-          src: "idle_hours.png",
-          angle: 0,
-          show_level: hmUI.show_level.ONLY_AOD,
-        });
-
-        idle_analog_clock_time_pointer_minute = new ImgWidget({
-          x: 0,
-          y: 0,
-          w: deviceInfo.width,
-          h: deviceInfo.height,
-          pos_x: 240 - 25,
-          pos_y: 240 - 240,
-          center_x: 240,
-          center_y: 240,
-          src: "idle_minutes.png",
-          angle: 0,
+        hmUI.createWidget(hmUI.widget.TIME_POINTER, {
+          hour_path: "idle_hours.png",
+          hour_centerX: 240,
+          hour_centerY: 240,
+          hour_posX: 26,
+          hour_posY: 240,
+          minute_path: "idle_minutes.png",
+          minute_centerX: 240,
+          minute_centerY: 240,
+          minute_posX: 25,
+          minute_posY: 240,
           show_level: hmUI.show_level.ONLY_AOD,
         });
 
@@ -430,28 +397,6 @@ try {
         if (hmFS.SysProGetInt("PRESAGE_GMT_currentMode")) currentMode = hmFS.SysProGetInt("PRESAGE_GMT_currentMode");
         bottomSubDialUpdate(false);
 
-        function time_update(updateHour = false, updateMinute = false, secondOverride = -1) {
-          let hour = timeSensor.hour;
-          let minute = timeSensor.minute;
-          let second = secondOverride >= 0 ? secondOverride : timeSensor.second;
-
-          if (updateHour) {
-            let normal_hour = hour;
-            let normal_fullAngle_hour = 360;
-            if (normal_hour > 11) normal_hour -= 12;
-            let normal_angle_hour = 0 + (normal_fullAngle_hour * normal_hour) / 12 + ((normal_fullAngle_hour / 12) * minute) / 60;
-
-            normal_analog_clock_pro_hour_pointer_img.angle = normal_angle_hour;
-            idle_analog_clock_time_pointer_hour.angle = normal_angle_hour;
-          }
-
-          if (updateMinute) {
-            let normal_angle_minute = (360 / 3600) * (minute * 60 + second);
-            normal_analog_clock_pro_minute_pointer_img.angle = normal_angle_minute;
-            idle_analog_clock_time_pointer_minute.angle = normal_angle_minute;
-          }
-        }
-
         let last_beat = -1;
         function time_update_sec_smth() {
           const beat = Math.floor((timeSensor.utc % 1000) / (1000 / 6)); // 0–5 for 21600 bph
@@ -459,12 +404,6 @@ try {
           last_beat = beat;
           const second = timeSensor.second;
           normal_analog_clock_pro_second_pointer_img.angle = (second + beat / 6) / 60 * 360;
-          if (beat === 0 && second % 6 === 0) {
-            const minute = timeSensor.minute;
-            const minute_angle = (360 * (minute * 60 + second)) / 3600;
-            normal_analog_clock_pro_minute_pointer_img.angle = minute_angle;
-            idle_analog_clock_time_pointer_minute.angle = minute_angle;
-          }
         }
 
         function gmtButtonClick(displayCurrent) {
@@ -601,7 +540,6 @@ try {
             displayCurrent = true;
             worldData = getWorldData(index);
             update_world_clock(false);
-            time_update(true, true);
             dayOfWeek_update();
             date_update();
 
