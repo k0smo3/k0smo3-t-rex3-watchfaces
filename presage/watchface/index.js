@@ -385,6 +385,8 @@ try {
           show_level: hmUI.show_level.ONLY_NORMAL,
           click_func: () => {
             displayCurrent = gmtButtonClick(displayCurrent);
+            dayOfWeek_update();
+            date_update();
           },
         });
 
@@ -468,6 +470,7 @@ try {
           if (displayCurrent) {
             worldData = getWorldData(index);
             hmUI.showToast({ text: worldData.city + " (" + (index + 1) + "/" + count + ")" });
+            update_world_clock();
             return false;
           }
 
@@ -519,18 +522,18 @@ try {
         }
 
         function getDateNormalAngle() {
-          let date = timeSensor.day;
-          return (360 / 31) * (date - 1);
+          let day = timeSensor.day;
+          return (360 / 31) * (day - 1);
         }
 
         function dayOfWeek_update() {
-          let weekAngle = getDayOfWeekNormalAngle();
+          const weekAngle = getDayOfWeekNormalAngle();
           if (day_of_week.components.get("pointer")) day_of_week.components.get("pointer").setProperty(hmUI.prop.ANGLE, weekAngle);
         }
 
         function date_update() {
-          let weekAngle = getDateNormalAngle();
-          if (date.components.get("pointer")) date.components.get("pointer").setProperty(hmUI.prop.ANGLE, weekAngle);
+          const dateAngle = getDateNormalAngle();
+          if (date.components.get("pointer")) date.components.get("pointer").setProperty(hmUI.prop.ANGLE, dateAngle);
         }
 
         function valuesAreClose(firstValue, secondValue, tolerance = 10) {
@@ -595,6 +598,8 @@ try {
             displayCurrent = true;
             worldData = getWorldData(index);
             time_update(true, true);
+            dayOfWeek_update();
+            date_update();
 
             if (screenType == hmSetting.screen_type.WATCHFACE) {
               if (!normal_timerUpdate) {
