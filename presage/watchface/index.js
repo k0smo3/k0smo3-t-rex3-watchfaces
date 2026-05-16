@@ -192,6 +192,32 @@ try {
         heart.addComponent("scale", normal_heart_rate_icon_img);
         heart.addComponent("pointer", normal_heart_rate_pointer_progress_img_pointer);
 
+        const heartSensor = hmSensor.createSensor(hmSensor.id.HEART);
+        const heartRateText = hmUI.createWidget(hmUI.widget.TEXT, {
+          x: 218,
+          y: 362,
+          w: 44,
+          h: 18,
+          text_size: 18,
+          color: 0xFFFFFFFF,
+          align_h: hmUI.align.CENTER_H,
+          align_v: hmUI.align.CENTER_V,
+          text_style: hmUI.text_style.ELLIPSIS,
+          text: '--',
+          show_level: hmUI.show_level.ONLY_NORMAL,
+        });
+        heart.addComponent("bpm", heartRateText);
+
+        function heart_update() {
+          const bpm = heartSensor.last;
+          heartRateText.setProperty(hmUI.prop.TEXT, bpm > 0 ? bpm.toString() : '--');
+          const color = bpm >= 130 ? 0xFF4040
+                      : bpm >= 100 ? 0xFFCC00
+                      :              0xFFFFFF;
+          heartRateText.setProperty(hmUI.prop.COLOR, color);
+        }
+        heartSensor.addEventListener(heartSensor.event.CURRENT, heart_update);
+
         normal_week__icon_img = hmUI.createWidget(hmUI.widget.IMG, {
           x: 173,
           y: 273,
@@ -546,6 +572,7 @@ try {
             update_world_clock(false);
             dayOfWeek_update();
             date_update();
+            heart_update();
 
             if (screenType == hmSetting.screen_type.WATCHFACE) {
               if (!normal_timerUpdateSecSmooth) {
