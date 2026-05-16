@@ -17,10 +17,17 @@ A fictional Seiko 24-hour face. The hour hand completes one full revolution
 per 24 hours (midnight at top, noon at bottom), with a 24-hour graduated outer
 bezel and GMT complication.
 
+![Seiko 24H](seiko-24.png)
+
+## Usage
+
+### Switching GMT / World Clock Zone
+On watch faces with a GMT complication (**GS-gmt**, **presage**, **seiko-24**), tap the GMT letters on the dial to cycle through the world clock cities configured in the Zepp app. A toast notification shows the selected city and its index. The selection persists across restarts.
+
 ## Platform
 
 All faces target the **Amazfit T-Rex 3** (480×480, ZeppOS 3.x, device source `8716544`).
 
 ## Development
 
-Built with the [Watch Face Editor for Amazfit / ZeppOS](https://github.com/SashaCX75/Watch-Face-Editor-for-Amazfit-watch-on-ZeppOS).
+Built with vibecoding
