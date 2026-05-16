@@ -1,0 +1,6 @@
+.idea
+dist/
+*log
+temp
+.gitignore
+Watch-face-editor-for-Amazfit-watch-on-ZeppOS-master.zip
