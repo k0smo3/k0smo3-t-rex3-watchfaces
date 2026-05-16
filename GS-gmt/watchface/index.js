@@ -49,7 +49,9 @@
         let wt_index = 0;
         let worldData = undefined;
         let displayCurrent = true;
+        let isFirstTapAfterWake = false;
         let timer_animate_wt = undefined;
+        let timer_second = undefined;
         let world_clock = undefined;
 
         //dynamic modify end
@@ -115,9 +117,11 @@
             if (hmFS.SysProGetInt("GS_GMT_wt_index")) wt_index = hmFS.SysProGetInt("GS_GMT_wt_index");
 
             timeSensor.addEventListener(timeSensor.event.MINUTEEND, function() {
-              let updateHour = timeSensor.minute == 0;
+              time_update(false, true);
+            });
 
-              time_update(updateHour, true);
+            timeSensor.addEventListener(timeSensor.event.DAYCHANGE, function() {
+              time_update(true);
             });
 
             // normal_analog_clock_pro_hour_pointer_img = hmUI.createWidget(hmUI.widget.TIME_POINTER_PRO, {
@@ -166,12 +170,17 @@
               show_level: hmUI.show_level.ONLY_NORMAL,
             });
 
-            normal_analog_clock_time_pointer_second = hmUI.createWidget(hmUI.widget.TIME_POINTER, {
-              second_path: 'SEC1-ombra.png',
-              second_centerX: 240,
-              second_centerY: 240,
-              second_posX: 102,
-              second_posY: 240,
+            normal_analog_clock_time_pointer_second = hmUI.createWidget(hmUI.widget.IMG, {
+              x: 0,
+              y: 0,
+              w: deviceInfo.width,
+              h: deviceInfo.height,
+              pos_x: 240 - 102,
+              pos_y: 0,
+              center_x: 240,
+              center_y: 240,
+              src: 'SEC1-ombra.png',
+              angle: 0,
               show_level: hmUI.show_level.ONLY_NORMAL,
             });
 
@@ -284,10 +293,10 @@
             });
 
             hmUI.createWidget(hmUI.widget.BUTTON, {
-              x: 175,
-              y: 308,
-              w: 155,
-              h: 40,
+              x: 145,
+              y: 283,
+              w: 195,
+              h: 75,
               text: "",
               normal_src: "_empty.png",
               press_src: "_empty.png",
@@ -333,16 +342,25 @@
 
             //#endregion
 
+            // 36,000 bph high-beat: 10 steps/sec, 100ms timer
+            function update_second() {
+              const beat = Math.floor((timeSensor.utc % 1000) / 100);
+              const angle = (timeSensor.second + beat / 10) / 60 * 360;
+              if (normal_analog_clock_time_pointer_second)
+                normal_analog_clock_time_pointer_second.setProperty(hmUI.prop.ANGLE, angle);
+            }
+            timer_second = timer.createTimer(0, 100, update_second);
+
             function gmtButtonClick(dc) {
               const count = world_clock.getWorldClockCount();
               if (count === 0) {
                 hmUI.showToast({ text: "No world clocks set" });
                 return true;
               }
-              if (dc) {
+              if (dc || isFirstTapAfterWake) {
+                isFirstTapAfterWake = false;
                 worldData = getWorldData(wt_index);
                 if (worldData) hmUI.showToast({ text: worldData.city + " (" + (wt_index + 1) + "/" + count + ")" });
-                update_world_clock();
                 return false;
               }
               wt_index++;
@@ -393,12 +411,19 @@
             const widgetDelegate = hmUI.createWidget(hmUI.widget.WIDGET_DELEGATE, {
               resume_call: (function () {
                 console.log('resume_call()');
+                isFirstTapAfterWake = true;
                 time_update(true, true);
+                if (!timer_second)
+                  timer_second = timer.createTimer(0, 100, update_second);
               }),
               pause_call: (function () {
                 if (timer_animate_wt) {
                   timer.stopTimer(timer_animate_wt);
                   timer_animate_wt = undefined;
+                }
+                if (timer_second) {
+                  timer.stopTimer(timer_second);
+                  timer_second = undefined;
                 }
               }),
             });
