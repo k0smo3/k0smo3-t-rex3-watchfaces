@@ -22,7 +22,12 @@ bezel and GMT complication.
 ## Usage
 
 ### Switching GMT / World Clock Zone
-On watch faces with a GMT complication (**GS-gmt**, **presage**, **seiko-24**), tap the GMT letters on the dial to cycle through the world clock cities configured in the Zepp app. A toast notification shows the selected city and its index. The selection persists across restarts.
+On watch faces with a GMT complication (**GS-gmt**, **presage**,
+**seiko-24**), tap the GMT letters on the dial to cycle through the world
+clock cities configured in the Zepp app. A toast notification shows the
+selected city and its index. The selection persists across restarts. The list
+of timezones is fetched from World Clock watch app, so you need to configure
+it first.
 
 ## Platform
 
