@@ -17,7 +17,7 @@ A fictional Seiko 24-hour face. The hour hand completes one full revolution
 per 24 hours (midnight at top, noon at bottom), with a 24-hour graduated outer
 bezel and GMT complication.
 
-![Seiko 24H](seiko-24.png)
+![Seiko 24H](/home/cos/work/t-rex-faces/seiko-24/assets/480x480-amazfit-t-rex-3/Preview.png)
 
 ## Usage
 
