@@ -324,17 +324,17 @@
 
             //#endregion
 
-            // 36,000 bph high-beat: 10 steps/sec, 100ms timer
+            // 21,600 bph: 6 steps/sec, ~167ms timer
             let last_beat = -1;
             function update_second() {
-              const beat = Math.floor((timeSensor.utc % 1000) / 100);
+              const beat = Math.floor((timeSensor.utc % 1000) / (1000 / 6));
               if (beat === last_beat) return;
               last_beat = beat;
-              const angle = (timeSensor.second + beat / 10) / 60 * 360;
+              const angle = (timeSensor.second + beat / 6) / 60 * 360;
               if (normal_analog_clock_time_pointer_second)
                 normal_analog_clock_time_pointer_second.setProperty(hmUI.prop.ANGLE, angle);
             }
-            timer_second = timer.createTimer(0, 100, update_second);
+            timer_second = timer.createTimer(0, 1000 / 6, update_second);
 
             function gmtButtonClick(dc) {
               const count = world_clock.getWorldClockCount();
@@ -400,7 +400,7 @@
                 time_update(true, true);
                 if (!timer_second) {
                   last_beat = -1;
-                  timer_second = timer.createTimer(0, 100, update_second);
+                  timer_second = timer.createTimer(0, 1000 / 6, update_second);
               }
               }),
               pause_call: (function () {
