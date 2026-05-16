@@ -49,7 +49,6 @@
         let wt_index = 0;
         let worldData = undefined;
         let displayCurrent = true;
-        let isFirstTapAfterWake = false;
         let timer_animate_wt = undefined;
         let timer_second = undefined;
         let world_clock = undefined;
@@ -72,9 +71,6 @@
             });
 
             if (!timeSensor) timeSensor = hmSensor.createSensor(hmSensor.id.TIME);
-            timeSensor.addEventListener(timeSensor.event.DAYCHANGE, function() {
-              time_update(true);
-            });
 
             normal_day_text_font = hmUI.createWidget(hmUI.widget.TEXT, {
               x: 322,
@@ -323,12 +319,8 @@
 
               if (updateMinute) {
                 let local_angle = 360 * hour / 24 + (360 / 24) * minute / 60;
-                if (displayCurrent) {
-                  if (normal_analog_clock_pro_hour_pointer_img) normal_analog_clock_pro_hour_pointer_img.setProperty(hmUI.prop.ANGLE, local_angle);
-                } else {
-                  worldData = getWorldData(wt_index);
-                  update_world_clock(false);
-                }
+                worldData = getWorldData(wt_index);
+                update_world_clock(false);
                 if (idle_analog_clock_pro_hour_pointer_img) idle_analog_clock_pro_hour_pointer_img.setProperty(hmUI.prop.ANGLE, local_angle);
               };
 
@@ -357,10 +349,10 @@
                 hmUI.showToast({ text: "No world clocks set" });
                 return true;
               }
-              if (dc || isFirstTapAfterWake) {
-                isFirstTapAfterWake = false;
+              if (dc) {
                 worldData = getWorldData(wt_index);
                 if (worldData) hmUI.showToast({ text: worldData.city + " (" + (wt_index + 1) + "/" + count + ")" });
+                update_world_clock();
                 return false;
               }
               wt_index++;
@@ -411,12 +403,13 @@
             const widgetDelegate = hmUI.createWidget(hmUI.widget.WIDGET_DELEGATE, {
               resume_call: (function () {
                 console.log('resume_call()');
-                isFirstTapAfterWake = true;
+                displayCurrent = true;
                 time_update(true, true);
                 if (!timer_second)
                   timer_second = timer.createTimer(0, 100, update_second);
               }),
               pause_call: (function () {
+                displayCurrent = true;
                 if (timer_animate_wt) {
                   timer.stopTimer(timer_animate_wt);
                   timer_animate_wt = undefined;
