@@ -397,13 +397,17 @@ try {
         if (hmFS.SysProGetInt("PRESAGE_GMT_currentMode")) currentMode = hmFS.SysProGetInt("PRESAGE_GMT_currentMode");
         bottomSubDialUpdate(false);
 
-        let last_beat = -1;
+        // 28,800 bph: 8 steps/sec, 125ms timer (exact integer — no rounding jitter)
+        let _sec_last_angle = -1;
         function time_update_sec_smth() {
-          const beat = Math.floor((timeSensor.utc % 1000) / (1000 / 6)); // 0–5 for 21600 bph
-          if (beat === last_beat) return;
-          last_beat = beat;
-          const second = timeSensor.second;
-          normal_analog_clock_pro_second_pointer_img.angle = (second + beat / 6) / 60 * 360;
+          const utc = timeSensor.utc;
+          const second = Math.floor(utc / 1000) % 60;
+          const beat = Math.min(7, Math.floor((utc % 1000) / 125));
+          const angle = (second + beat / 8) / 60 * 360;
+          if (angle !== _sec_last_angle) {
+            _sec_last_angle = angle;
+            normal_analog_clock_pro_second_pointer_img.angle = angle;
+          }
         }
 
         function gmtButtonClick(displayCurrent) {
@@ -545,10 +549,8 @@ try {
 
             if (screenType == hmSetting.screen_type.WATCHFACE) {
               if (!normal_timerUpdateSecSmooth) {
-                last_beat = -1;
-                let animDelay = 0;
-                let animRepeat = 1000 / 6;
-                normal_timerUpdateSecSmooth = timer.createTimer(animDelay, animRepeat, function (option) {
+                _sec_last_angle = -1;
+                normal_timerUpdateSecSmooth = timer.createTimer(0, 125, function (option) {
                   time_update_sec_smth();
                 }); // end timer
               } // end timer check
@@ -567,14 +569,11 @@ try {
         //dynamic modify end
       },
       onInit() {
-        logger.log("index page.js on init invoke");
       },
       build() {
         this.init_view();
-        logger.log("index page.js on ready invoke");
       },
       onDestroy() {
-        logger.log("index page.js on destroy invoke");
       },
     });
   })();

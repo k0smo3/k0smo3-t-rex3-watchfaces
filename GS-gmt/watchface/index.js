@@ -60,7 +60,6 @@
                 //dynamic modify start
                     
                 
-            console.log('Watch_Face.ScreenNormal');
             normal_background_bg = hmUI.createWidget(hmUI.widget.FILL_RECT, {
               x: 0,
               y: 0,
@@ -181,7 +180,6 @@
             });
 
 
-            console.log('Watch_Face.ScreenAOD');
             idle_background_bg = hmUI.createWidget(hmUI.widget.FILL_RECT, {
               x: 0,
               y: 0,
@@ -324,17 +322,22 @@
 
             //#endregion
 
-            // 21,600 bph: 6 steps/sec, ~167ms timer
-            let last_beat = -1;
+            // 28,800 bph: 8 steps/sec, 125ms timer (exact integer — no rounding jitter)
+            // Both second and beat derived from same utc snapshot to avoid sensor desync.
+            // Angle guard skips redundant setProperty calls without blocking late-fire recovery.
+            let _sec_last_angle = -1;
             function update_second() {
-              const beat = Math.floor((timeSensor.utc % 1000) / (1000 / 6));
-              if (beat === last_beat) return;
-              last_beat = beat;
-              const angle = (timeSensor.second + beat / 6) / 60 * 360;
-              if (normal_analog_clock_time_pointer_second)
-                normal_analog_clock_time_pointer_second.setProperty(hmUI.prop.ANGLE, angle);
+              const utc = timeSensor.utc;
+              const second = Math.floor(utc / 1000) % 60;
+              const beat = Math.min(7, Math.floor((utc % 1000) / 125));
+              const angle = (second + beat / 8) / 60 * 360;
+              if (angle !== _sec_last_angle) {
+                _sec_last_angle = angle;
+                if (normal_analog_clock_time_pointer_second)
+                  normal_analog_clock_time_pointer_second.setProperty(hmUI.prop.ANGLE, angle);
+              }
             }
-            timer_second = timer.createTimer(0, 1000 / 6, update_second);
+            timer_second = timer.createTimer(0, 125, update_second);
 
             function gmtButtonClick(dc) {
               const count = world_clock.getWorldClockCount();
@@ -395,11 +398,10 @@
 
             const widgetDelegate = hmUI.createWidget(hmUI.widget.WIDGET_DELEGATE, {
               resume_call: (function () {
-                console.log('resume_call()');
                 displayCurrent = true;
                 time_update(true, true);
                 if (!timer_second) {
-                  last_beat = -1;
+                  _sec_last_angle = -1;
                   timer_second = timer.createTimer(0, 1000 / 6, update_second);
               }
               }),
@@ -419,14 +421,11 @@
                 //dynamic modify end
             },
             onInit() {
-                logger.log('index page.js on init invoke');
             },
             build() {
                 this.init_view();
-                logger.log('index page.js on ready invoke');
             },
             onDestroy() {
-                logger.log('index page.js on destroy invoke');
             }
         });
         ;
