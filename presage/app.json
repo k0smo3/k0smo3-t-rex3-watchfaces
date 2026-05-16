@@ -1,0 +1,63 @@
+{
+  "configVersion": "v3",
+  "app": {
+    "appId": 10013,
+    "appName": "seiko_presage_gmt",
+    "appType": "watchface",
+    "version": {
+      "code": 2,
+      "name": "1.1"
+    },
+    "vender": "zepp",
+    "description": "Seiko Presage",
+    "icon": "Preview.png",
+    "cover": [
+      "Preview.png"
+    ]
+  },
+  "permissions": [
+    "gps"
+  ],
+  "runtime": {
+    "apiVersion": {
+      "compatible": "1.0.0",
+      "target": "1.0.1",
+      "minVersion": "1.0.0"
+    }
+  },
+  "targets": {
+    "480x480-amazfit-t-rex-3": {
+      "module": {
+        "watchface": {
+          "path": "watchface/index",
+          "main": 1,
+          "editable": 0,
+          "lockscreen": 1
+        }
+      },
+      "platforms": [
+        {
+          "name": "Matterhorn",
+          "deviceSource": 8716544
+        },
+        {
+          "name": "MatterhornWN",
+          "deviceSource": 8716545
+        },
+        {
+          "name": "MatterhornW",
+          "deviceSource": 8716547
+        }
+      ],
+      "designWidth": 480
+    }
+  },
+  "i18n": {
+    "en-US": {
+      "appName": "seiko_presage_gmt",
+      "icon": "Preview.png"
+    }
+  },
+  "defaultLanguage": "en-US",
+  "debug": false
+}
